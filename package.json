@@ -1,0 +1,67 @@
+{
+  "name": "nuxt-typed-openapi",
+  "version": "0.0.0",
+  "description": "A Nuxt.js 3 module for generating type-safe API calls based on OpenAPI schemas. Ensure robust integration with your external APIs.",
+  "keywords": [
+    "nuxt",
+    "nuxt3",
+    "openapi",
+    "typescript",
+    "typesafe"
+  ],
+  "repository": {
+    "url": "git@github.com:hacomono-lib/nuxt-typed-openapi.git",
+    "type": "git"
+  },
+  "author": "mew-ton <mxl_usmarc@slmail.mewton.jp>",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/module.mjs",
+      "require": "./dist/module.cjs"
+    }
+  },
+  "main": "./dist/module.cjs",
+  "types": "./dist/types.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prepare": "nuxt-module-build --stub && nuxi prepare playground",
+    "dev": "nuxi dev playground",
+    "build": "nuxt-module-build",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest watch"
+  },
+  "dependencies": {
+    "@nuxt/kit": "^3.0.0",
+    "openapi-typescript": "^6.5.0",
+    "type-fest": "^4.2.0"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "^0.4.8",
+    "@changesets/cli": "^2.26.2",
+    "@nuxt/devtools": "latest",
+    "@nuxt/module-builder": "^0.4.0",
+    "@nuxt/schema": "^3.6.5",
+    "@nuxt/test-utils": "^3.6.5",
+    "@types/node": "^18.17.3",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
+    "eslint": "^8.47.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-import": "^2.28.0",
+    "nuxt": "^3.6.5",
+    "prettier": "^3.0.2",
+    "typescript": "^5.1.6",
+    "vitest": "^0.34.1"
+  },
+  "volta": {
+    "node": "18.17.1",
+    "yarn": "3.6.2"
+  },
+  "packageManager": "yarn@3.6.2"
+}
