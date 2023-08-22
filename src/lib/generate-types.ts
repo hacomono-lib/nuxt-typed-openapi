@@ -1,14 +1,14 @@
 import { addImports, addTypeTemplate } from '@nuxt/kit'
 
 import openapiTs from 'openapi-typescript'
-import type { OpenapiTsSource } from './types'
-import { TEMPLATE_DIR_NAME } from './constants'
+import type { Options } from './types'
+import { TEMPLATE_DIR_NAME, importTypes } from './constants'
 
-export async function generateTypes(schema: OpenapiTsSource): Promise<void> {
+export async function generateTypes(options: Options): Promise<void> {
   addTypeTemplate({
     filename: `${TEMPLATE_DIR_NAME}/openapi.d.ts`,
     write: true,
-    getContents: () => openapiTs(schema)
+    getContents: () => openapiTs(options.src)
   })
 
   const types = addTypeTemplate({
@@ -16,8 +16,6 @@ export async function generateTypes(schema: OpenapiTsSource): Promise<void> {
     write: true,
     getContents: () => template()
   })
-
-  const importTypes = ['Entity', 'ResponseData', 'RequestBody', 'PathParameters', 'QueryParameters']
 
   for (const type of importTypes) {
     addImports({
@@ -28,10 +26,13 @@ export async function generateTypes(schema: OpenapiTsSource): Promise<void> {
   }
 }
 
+// eslint-disable-next-line max-lines-per-function
 function template(): string {
   return `
 import type { paths, components, operations } from './openapi'
 import type { UnionToIntersection, Get, Writable } from 'type-fest'
+
+type Dictionary<K extends string = string, V = unknown> = { [key in K]: V }
 
 export type Simplify<T> = T extends unknown ? { [K in keyof T]: Simplify<T[K]> } : never
 
@@ -81,7 +82,7 @@ export type ToExact<S extends string> = S extends \`\${infer H}{\${infer P}}\${i
 
 export type PathParameter<PATH extends string, PARAM extends string> = Get<
   paths,
-  \`\${PATH}.\${HttpMethodsByPath<PATH>}.parameters.path.\${PARAM}\`
+  \`\${PATH}.\${HttpMethodsByPath<UrlPaths>}.parameters.path.\${PARAM}\`
 >
 
 export type ToPath<E extends ExactPaths> = {

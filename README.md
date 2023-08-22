@@ -20,6 +20,7 @@ A Nuxt.js 3 module for generating type-safe API calls based on OpenAPI schemas. 
 - Utilizes `openapi-typescript` to dynamically generate type-safe API calls for Nuxt.js 3 from external OpenAPI schemas.
 - Ensure a seamless and type-checked integration with external APIs, leveraging the power of OpenAPI-to-TypeScript conversion.
 - Streamline your development process by auto-binding API responses to their respective types, eliminating manual type definitions.
+- Only overrides TypeScript types, resulting in an extremely minimal impact on bundle size.
 
 ## Quick Setup
 
@@ -94,6 +95,7 @@ const { data } = await useFetchApi('/pet/3')
 The useFetchApi method is identical to useFetch, but is type safe based on the specified OpenAPI Schema.
 
 ```ts
+// $useFetchApi is auto-imported. if you want to import manually, write `import { useFetchApi } from '#imports'`
 const { data } = await useFetchApi('/pet/3')
 ```
 
@@ -138,11 +140,15 @@ Basic functionality is the same as useFetchApi.
 
 ```ts
 const { data } = await useAsyncData(() => {
+  // $fetchApi is auto-imported. if you want to import manually, write `import { $fetchApi } from '#imports'`
   return $fetchApi('/pet/3')
 })
 ```
 
 ```ts
+// in server/api, $fetchApi is not auto-imported. you need to import manually
+import { $fetchApi } from '#nuxt-typed-openapi'
+
 export default defineEventHandler((event) => {
   return $fetchApi('/pet/3')
 })

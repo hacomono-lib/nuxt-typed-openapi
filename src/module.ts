@@ -9,7 +9,10 @@ export type ModuleOptions = Options
 export default defineNuxtModule<ModuleOptions>({
   meta: {
     name: 'typed-openapi',
-    configKey: 'typedApiSource'
+    configKey: 'typedApiSource',
+    compatibility: {
+      nuxt: '^3.0.0'
+    }
   },
   defaults: {
     src: '',
@@ -18,8 +21,6 @@ export default defineNuxtModule<ModuleOptions>({
     openapiTs: {}
   },
   async setup(options, nuxt) {
-    await generateTypes(options.src)
-
-    await generateComposables(options, nuxt)
+    await Promise.all([generateTypes(options), generateComposables(options, nuxt)])
   }
 })

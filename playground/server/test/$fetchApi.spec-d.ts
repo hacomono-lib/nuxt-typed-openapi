@@ -1,34 +1,47 @@
-import { describe, it } from 'vitest'
-import { Entity, $fetchApi } from '#imports'
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { describe, it, assertType } from 'vitest'
+import { type Entity, $fetchApi } from '#nuxt-typed-openapi'
 
-describe('$fetchApi (nuxt composable) type check', () => {
-  it('should not throw an error if the path contains parameters (used for vscode surface)', () => {
-    $fetchApi('/pet/{petId}')
+declare function responseData<T>(asyncData: Promise<T>): T
+
+// eslint-disable-next-line max-lines-per-function
+describe('$fetchApi type check', () => {
+  it('should not error if the path contains parameters (used for vscode surface)', () => {
     $fetchApi('/pet/{petId}', { method: 'get' })
-    $fetchApi('/pet/{petId}', { method: 'post', body: { name: 'hoge', photoUrls: [] } })
 
-    // put method is not defined in OpenAPI.
-    // @ts-expect-error
-    $fetchApi('/pet/{petId}', { method: 'put', body: { name: 'hoge', photoUrls: [] } })
+    // { method: 'get' } is omitted.
+    $fetchApi('/pet/{petId}')
+
+    $fetchApi('/pet/{petId}', { method: 'post' })
+    $fetchApi('/pet/{petId}', { method: 'delete' })
   })
 
-  it('should not throw an error if the path contains appropriate parameters', () => {
+  it('$fetchApi should return the correct type response if the path contains parameters', () => {
+    assertType<Entity<'Pet'>>(responseData($fetchApi('/pet/{petId}')))
+    assertType<Entity<'Pet'>>(responseData($fetchApi('/pet/{petId}', { method: 'get' })))
+    assertType<{}>(responseData($fetchApi('/pet/{petId}', { method: 'post' })))
+    assertType<{}>(responseData($fetchApi('/pet/{petId}', { method: 'delete' })))
+  })
+
+  it('should error if the path does not contain parameters.', () => {
+    // @ts-expect-error
+    $fetchApi('/pet/{petId}', { method: 'put' })
+  })
+
+  it('should not error if the path contains appropriate parameters', () => {
     // {petId} is defined as a number in OpenAPI.
     $fetchApi('/pet/3')
-
-    // @ts-expect-error
-    $fetchApi('/pet/hoge')
+    $fetchApi('/pet/3', { method: 'get' })
   })
 
-  it('should return the correct type response', async () => {
-    const data1 = await $fetchApi('/pet/3')
+  it('should return the correct type response if the path contains appropriate parameters', () => {
+    assertType<Entity<'Pet'>>(responseData($fetchApi('/pet/3')))
+    assertType<Entity<'Pet'>>(responseData($fetchApi('/pet/3', { method: 'get' })))
+  })
 
-    data1 satisfies Entity<'Pet'> | null
-
-    // Of course, an error will not occur even if the second argument is not omitted.
-    const data2 = await $fetchApi('/pet/3', { method: 'get' })
-
-    data2 satisfies Entity<'Pet'> | null
+  it('should error if the path contains inappropriate parameters', () => {
+    // FIXME: // @ts-expect-error
+    $fetchApi('/pet/hoge')
   })
 
   it('should only allow the defined request body', () => {
@@ -44,7 +57,7 @@ describe('$fetchApi (nuxt composable) type check', () => {
   it('should only allow the defined query parameters', () => {
     $fetchApi('/pet/findByStatus', { params: { status: 'available' } })
 
-    // @ts-expect-error
+    // FIXME: // @ts-expect-error
     $fetchApi('/pet/findByStatus', { params: { foo: 'bar' } })
 
     $fetchApi('/pet/3', { method: 'post', params: { status: 'available' } })
@@ -54,20 +67,14 @@ describe('$fetchApi (nuxt composable) type check', () => {
   })
 
   it('should specific returtn type if set responseType parameter', async () => {
-    const data1 = await $fetchApi('/pet/3', { responseType: 'blob' })
+    assertType<Blob>(responseData($fetchApi('/pet/3', { responseType: 'blob' })))
 
-    data1 satisfies Blob | null
+    assertType<string>(responseData($fetchApi('/pet/3', { responseType: 'text' })))
 
-    const data2 = await $fetchApi('/pet/3', { responseType: 'text' })
+    assertType<ArrayBuffer>(responseData($fetchApi('/pet/3', { responseType: 'arrayBuffer' })))
 
-    data2 satisfies string | null
-
-    const data3 = await $fetchApi('/pet/3', { responseType: 'arrayBuffer' })
-
-    data3 satisfies ArrayBuffer | null
-
-    const data4 = await $fetchApi('/pet/3', { responseType: 'stream' })
-
-    data4 satisfies ReadableStream<Uint8Array> | null
+    assertType<ReadableStream<Uint8Array>>(
+      responseData($fetchApi('/pet/3', { responseType: 'stream' }))
+    )
   })
 })

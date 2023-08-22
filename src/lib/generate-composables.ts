@@ -1,7 +1,9 @@
+/* eslint-disable max-lines */
 import { addTemplate, addImports } from '@nuxt/kit'
 import type { Nuxt } from '@nuxt/schema'
-import { TEMPLATE_DIR_NAME } from './constants'
+import { TEMPLATE_DIR_NAME, importTypes } from './constants'
 import { Options } from './types'
+import { defu } from 'defu'
 
 export async function generateComposables(options: Options, nuxt: Nuxt): Promise<void> {
   await addComposable(options, nuxt)
@@ -48,6 +50,7 @@ type NonNullable<T> = T extends null | undefined ? never : T;
   return { head, body }
 }
 
+// eslint-disable-next-line max-lines-per-function
 function fetchApiTemplate(_options: Options): SourceSet {
   const head = `
 import { $fetch } from 'ofetch'
@@ -129,6 +132,7 @@ export const $fetchApi: FetchWrap = $fetch
   return { head, body }
 }
 
+// eslint-disable-next-line max-lines-per-function
 function useFetchApiTemplate(_options: Options): SourceSet {
   const head = `
 import { useFetch } from '#app'
@@ -214,7 +218,13 @@ export const useFetchApi = useFetch as UseFetchWrap
   return { head, body }
 }
 
-function addComposable(options: Options, nuxt: Nuxt) {
+function exportTypeTemplate(_option: Options): string {
+  return `
+export type { ${importTypes.join(', ')} } from './types'
+`
+}
+
+function addComposable(options: Options, _nuxt: Nuxt) {
   if (!options.importComposable) {
     return
   }
@@ -244,32 +254,22 @@ function addComposable(options: Options, nuxt: Nuxt) {
 }
 
 function addNitroUtils(options: Options, nuxt: Nuxt) {
-  if (!options.importNitroUtils) {
+  if (!options.importNitroUtils || nuxt.options.nitro.imports === false) {
     return
   }
-
   const { head: commonHead, body: commonBody } = commonTemplate(options)
+  const exportTypes = exportTypeTemplate(options)
   const { head: fetchApiHead, body: fetchApiBody } = fetchApiTemplate(options)
 
-  const nitroUtils = addTemplate({
+  addTemplate({
     filename: `${TEMPLATE_DIR_NAME}/nitro-utils.ts`,
     write: true,
-    getContents: () => [commonHead, fetchApiHead, commonBody, fetchApiBody].join('')
+    getContents: () => [commonHead, fetchApiHead, exportTypes, commonBody, fetchApiBody].join('')
   })
 
-  const includes = (() => {
-    if (nuxt.options.nitro.imports === undefined) {
-      return []
-    }
-
-    if (Array.isArray(nuxt.options.nitro.imports)) {
-      return nuxt.options.nitro.imports
-    }
-
-    return [nuxt.options.nitro.imports]
-  })()
-
-  nuxt.options.nitro.imports = {
-    include: [...includes, nitroUtils.dst]
-  }
+  nuxt.hook('nitro:config', (config) => {
+    config.alias = defu(config.alias, {
+      '#nuxt-typed-openapi': `${TEMPLATE_DIR_NAME}/nitro-utils.ts`
+    })
+  })
 }

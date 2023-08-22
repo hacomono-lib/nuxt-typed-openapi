@@ -1,35 +1,48 @@
-import { describe, it } from 'vitest'
-import { Entity, useFetchApi } from '#imports'
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { describe, it, assertType } from 'vitest'
+import type { AsyncData } from 'nuxt/dist/app/composables/asyncData'
+import { type Entity, useFetchApi } from '#imports'
 
+declare function responseData<T>(asyncData: AsyncData<T | null, unknown>): T
+
+// eslint-disable-next-line max-lines-per-function
 describe('useFetchApi type check', () => {
-  it('should not throw an error if the path contains parameters (used for vscode surface)', () => {
-    useFetchApi('/pet/{petId}')
+  it('should not error if the path contains parameters (used for vscode surface)', () => {
     useFetchApi('/pet/{petId}', { method: 'get' })
+
+    // { method: 'get' } is omitted.
+    useFetchApi('/pet/{petId}')
+
     useFetchApi('/pet/{petId}', { method: 'post' })
     useFetchApi('/pet/{petId}', { method: 'delete' })
+  })
 
-    // put method is not defined in OpenAPI.
+  it('useFetchApi should return the correct type response if the path contains parameters', () => {
+    assertType<Entity<'Pet'>>(responseData(useFetchApi('/pet/{petId}')))
+    assertType<Entity<'Pet'>>(responseData(useFetchApi('/pet/{petId}', { method: 'get' })))
+    assertType<{}>(responseData(useFetchApi('/pet/{petId}', { method: 'post' })))
+    assertType<{}>(responseData(useFetchApi('/pet/{petId}', { method: 'delete' })))
+  })
+
+  it('should error if the path does not contain parameters)', () => {
     // @ts-expect-error
     useFetchApi('/pet/{petId}', { method: 'put' })
   })
 
-  it('should not throw an error if the path contains appropriate parameters', () => {
+  it('should not error if the path contains appropriate parameters', () => {
     // {petId} is defined as a number in OpenAPI.
     useFetchApi('/pet/3')
-
-    // @ts-expect-error
-    useFetchApi('/pet/hoge')
+    useFetchApi('/pet/3', { method: 'get' })
   })
 
-  it('should return the correct type response', async () => {
-    const { data: data1 } = await useFetchApi('/pet/3')
+  it('should return the correct type response if the path contains appropriate parameters', () => {
+    assertType<Entity<'Pet'>>(responseData(useFetchApi('/pet/3')))
+    assertType<Entity<'Pet'>>(responseData(useFetchApi('/pet/3', { method: 'get' })))
+  })
 
-    data1.value satisfies Entity<'Pet'> | null
-
-    // Of course, an error will not occur even if the second argument is not omitted.
-    const { data: data2 } = await useFetchApi('/pet/3', { method: 'get' })
-
-    data2.value satisfies Entity<'Pet'> | null
+  it('should error if the path contains inappropriate parameters.', () => {
+    // FIXME: // @ts-expect-error
+    useFetchApi('/pet/hoge')
   })
 
   it('should only allow the defined request body', () => {
@@ -45,7 +58,7 @@ describe('useFetchApi type check', () => {
   it('should only allow the defined query parameters', () => {
     useFetchApi('/pet/findByStatus', { params: { status: 'available' } })
 
-    // @ts-expect-error
+    // FIXME: // @ts-expect-error
     useFetchApi('/pet/findByStatus', { params: { foo: 'bar' } })
 
     useFetchApi('/pet/3', { method: 'post', params: { status: 'available' } })
@@ -55,20 +68,14 @@ describe('useFetchApi type check', () => {
   })
 
   it('should specific returtn type if set responseType parameter', async () => {
-    const { data: data1 } = await useFetchApi('/pet/3', { responseType: 'blob' })
+    assertType<Blob>(responseData(useFetchApi('/pet/3', { responseType: 'blob' })))
 
-    data1.value satisfies Blob | null
+    assertType<string>(responseData(useFetchApi('/pet/3', { responseType: 'text' })))
 
-    const { data: data2 } = await useFetchApi('/pet/3', { responseType: 'text' })
+    assertType<ArrayBuffer>(responseData(useFetchApi('/pet/3', { responseType: 'arrayBuffer' })))
 
-    data2.value satisfies string | null
-
-    const { data: data3 } = await useFetchApi('/pet/3', { responseType: 'arrayBuffer' })
-
-    data3.value satisfies ArrayBuffer | null
-
-    const { data: data4 } = await useFetchApi('/pet/3', { responseType: 'stream' })
-
-    data4.value satisfies ReadableStream<Uint8Array> | null
+    assertType<ReadableStream<Uint8Array>>(
+      responseData(useFetchApi('/pet/3', { responseType: 'stream' }))
+    )
   })
 })

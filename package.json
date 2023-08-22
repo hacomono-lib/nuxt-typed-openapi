@@ -33,8 +33,10 @@
     "dev": "nuxi dev playground",
     "build": "nuxt-module-build",
     "lint": "eslint .",
-    "test": "vitest run",
-    "test:watch": "vitest watch"
+    "test": "run-p test:*",
+    "test:typecheck": "tsc --noEmit --skipLibCheck ./src/module.ts",
+    "test:spec": "vitest run",
+    "test:spec-type": "vitest typecheck"
   },
   "dependencies": {
     "@nuxt/kit": "^3.0.0",
@@ -57,7 +59,8 @@
     "nuxt": "^3.6.5",
     "prettier": "^3.0.2",
     "typescript": "^5.1.6",
-    "vitest": "^0.34.1"
+    "vitest": "^0.34.1",
+    "yarn-run-all": "latest"
   },
   "volta": {
     "node": "18.17.1",
